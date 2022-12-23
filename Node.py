@@ -1,27 +1,9 @@
-import numpy
 import numpy as np
-from copy import copy
 import DatasetLoader
 
-minLeafNum = 10
+maxDeep = 999
 
-
-# 5 0 1 2
-# ->
-# 0 0 0 0 1 0 0 0 0
-# 1 0 0 0 0 0 0 0 0
-# 0 1 0 0 0 0 0 0 0
-# 0 0 1 0 0 0 0 0 0
-def labels2Map(labels):
-    classUnique = np.unique(labels)
-    classNum = len(classUnique)
-    classMap = np.zeros([len(labels), classNum])
-    for i in range(len(labels)):
-        classMap[i][labels[i]] = 1  # every point set 1
-    return classMap, classUnique
-
-
-def buildTree(datas, labels, features):
+def buildTree(datas, labels, features, deep):
     counts, oneCount = datas.shape
 
     # 如果分清楚了，就结束
@@ -33,6 +15,11 @@ def buildTree(datas, labels, features):
     if counts == 1:
         return np.bincount(labels).argmax()
 
+    if deep == maxDeep:
+        print("deep = 10")
+        print(str(np.bincount(labels).argmax()))
+        return np.bincount(labels).argmax()
+
     bestIndexFeature, bestSpiltPoint = chooseBestFeature(datas, labels, features)
     # 得到最佳特征
     bestFeature = features[bestIndexFeature]
@@ -40,12 +27,10 @@ def buildTree(datas, labels, features):
     decisionTree = {bestFeature: {}}
     # 使用过当前最佳特征后将其删去
     del features[bestIndexFeature]
-    # 子特征 = 当前特征（因为刚才已经删去了用过的特征）
-    # sub_labels = features[:]
 
     subData, subLabels, subDataOther, subLabelsOther = splitData(datas, labels, bestIndexFeature, bestSpiltPoint)
-    decisionTree[bestFeature][bestSpiltPoint] = buildTree(np.array(subData), subLabels, features[:])
-    decisionTree[bestFeature]['other'] = buildTree(np.array(subDataOther), subLabelsOther, features[:])
+    decisionTree[bestFeature][bestSpiltPoint] = buildTree(np.array(subData), subLabels, features[:], deep+1)
+    decisionTree[bestFeature]['other'] = buildTree(np.array(subDataOther), subLabelsOther, features[:], deep+1)
 
     return decisionTree
 
@@ -68,7 +53,6 @@ def calGini(datas, labels):
 
 # 寻找最佳切割点
 def chooseBestFeature(datas, labels, features):
-    bincountLabels = np.bincount(labels)
     # 初始化最佳基尼系数
     bestGini = 1
     # 初始化最优特征
@@ -144,9 +128,11 @@ def useTree(tree, inFeatures, testData):
 
 
 def main():
+    trainSize = 1000
+    testSize = 100
     [dataX, dataY] = DatasetLoader.getTrainingDataSet()
     testX = []
-    for i in range(1000):
+    for i in range(trainSize):
         testX.append(np.array(dataX[i]))
     x = np.array(testX)
 
@@ -155,31 +141,38 @@ def main():
         varNameList.append(i)
 
     textY = []
-    for i in range(1000):
+    for i in range(trainSize):
         textY.append(dataY[i])
     y = np.array(textY)
 
     features = list(range(28 * 28))
-    tree = buildTree(x, y, features)
+
+    print("data load.")
+    tree = buildTree(x, y, features, 1)
     print(tree)
 
-    [testData, testLabels] = DatasetLoader.getTrainingDataSet()
+    [testData, testLabels] = DatasetLoader.getTestDataSet()
     testX = []
-    for i in range(10):
+    for i in range(testSize):
         testX.append(np.array(testData[i]))
     x = np.array(testX)
 
     tLabels = []
-    for i in range(10):
+    for i in range(testSize):
         tLabels.append(testLabels[i])
 
-    t = np.array(tLabels)
+    test = np.array(tLabels)
 
-    print(t)
+    print(test)
 
-    for t in x:
-        label = useTree(tree, list(range(28*28)), t)
-        print("tree: " + str(label))
+    err = 0
+    for t in range(len(x)):
+        label = useTree(tree, list(range(28*28)), x[t])
+        if label != test[t]:
+            err += 1
+            print(str(label) + "real: " + str(test[t]))
+
+    print(str(err))
 
 
 
