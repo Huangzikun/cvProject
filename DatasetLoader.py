@@ -87,7 +87,7 @@ class LabelLoader(DatasetLoader):
         content = self.getFileContent()
         labels = []
         for index in range(self.count):
-            labels.append(norm(content[index + 8]))
+            labels.append(content[index + 8])
         return labels
 
 
@@ -96,9 +96,9 @@ def getTrainingDataSet():
     获得训练数据集
     """
     imageLoader = ImageLoader('/Users/huangzikun/Desktop/TTTC6404 Image Processing and Computer '
-                               'Vision/project/dataset/train-images-idx3-ubyte', 60000)
+                              'Vision/project/dataset/train-images-idx3-ubyte', 60000)
     labelLoader = LabelLoader('/Users/huangzikun/Desktop/TTTC6404 Image Processing and Computer '
-                               'Vision/project/dataset/train-labels-idx1-ubyte', 60000)
+                              'Vision/project/dataset/train-labels-idx1-ubyte', 60000)
     return imageLoader.load(), labelLoader.load()
 
 
@@ -113,11 +113,3 @@ def getTestDataSet():
         '/Users/huangzikun/Desktop/TTTC6404 Image Processing and Computer Vision/project/dataset/t10k-labels-idx1-ubyte',
         10000)
     return imageLoader.load(), labelLoader.load()
-
-
-if __name__ == '__main__':
-    trainDataSet, trainLabels = getTrainingDataSet()
-    line = np.array(trainDataSet[0])
-    img = line.reshape((28, 28))
-    plt.imshow(img)
-    plt.show()
